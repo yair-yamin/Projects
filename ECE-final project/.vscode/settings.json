@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "adc.h": "c",
+        "fsm.h": "c",
+        "inverters.h": "c",
+        "operators.h": "c",
+        "main.h": "c",
+        "callbacks.h": "c",
+        "uart.h": "c",
+        "platform.h": "c",
+        "utils.h": "c",
+        "hashtable.h": "c",
+        "dbsetfunctions.h": "c",
+        "database.h": "c",
+        "spi.h": "c",
+        "tim.h": "c",
+        "inttypes.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": true
+}
