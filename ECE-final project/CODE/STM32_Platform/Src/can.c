@@ -85,7 +85,7 @@ void plt_CanInit(size_t rx_queue_size)
  * @param  pCan     Pointer to the CAN handle
  * @retval None
  * @note   This function initializes the CAN filter for the specified CAN peripheral.
- *      !  The filter is configured to accept any messages ID.
+ *      
  */
 void plt_CanFilterInit(CAN_HandleTypeDef* pCan)
 {
@@ -98,21 +98,13 @@ void plt_CanFilterInit(CAN_HandleTypeDef* pCan)
     filter0.FilterScale = CAN_FILTERSCALE_32BIT;
     filter0.FilterMode = CAN_FILTERMODE_IDMASK;
 
-    // Set filter IDs to 0 and mask to 0 to accept any message ID
-    filter0.FilterIdHigh = 0x0000;
+    // Set filter IDs to accept messages with IDs in the range 0x280 to 0x28F
+    filter0.FilterIdHigh = 0x283 << 5;
     filter0.FilterIdLow  = 0x0000;
-    filter0.FilterMaskIdHigh = 0x0000;
+    filter0.FilterMaskIdHigh = 0x7F0 << 5;;
     filter0.FilterMaskIdLow  = 0x0000;
 
-    if (pCan->Instance == CAN1)
-    {
-        filter0.FilterBank = 0; // Use bank 0 for CAN1
-    }
-    else if (pCan->Instance == CAN2)
-    {
-        filter0.FilterBank = 14; // Use bank 14 for CAN2
-    }
-
+    filter0.FilterBank = 0;
 
     if (HAL_CAN_ConfigFilter(pCan, &filter0)) {
         Error_Handler();
@@ -157,14 +149,14 @@ void plt_CanFilterInit(CAN_HandleTypeDef* pCan)
 */
 void plt_CanProcessRxMsgs()
 {
-    can_message_t data = {0};
+    can_message_t msg = {0};
 
     while (canRxQueue.status != QUEUE_EMPTY)
     {
-        Queue_Pop(&canRxQueue, &data);
+        Queue_Pop(&canRxQueue, &msg);
         if (Can_RxCallback)
         {
-            Can_RxCallback(&data);
+            Can_RxCallback(&msg);
         }
     }
 }
@@ -199,8 +191,8 @@ HAL_StatusTypeDef plt_CanTx(CanChanel_t chanel, CAN_TxHeaderTypeDef* TxHeader, u
  * @param  pData    Pointer to the CAN message to be sent
  * @retval HAL status
 */
-HAL_StatusTypeDef 
-plt_CanSendMsg(CanChanel_t chanel, can_message_t *pData)
+
+HAL_StatusTypeDef  plt_CanSendMsg(CanChanel_t chanel, can_message_t *pData)
 {
     CAN_TxHeaderTypeDef TxHeader = {0};
     TxHeader.StdId = pData->id;

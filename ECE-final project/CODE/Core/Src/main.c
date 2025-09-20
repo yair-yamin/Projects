@@ -108,12 +108,7 @@ int main(void)
   handlers.htim2 = &htim2;
   PlatformInit(&handlers,RxQueueSize);
   FSM_Init();
-  memset(&msg.data,0x22, sizeof(msg.data)); // Initialize data with 0x22
   HAL_TIM_Base_Start_IT(&htim6);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-
-  
-  uint16_t counter = 0; 
   /* USER CODE END 2 */
 
   /* Infinite loop */

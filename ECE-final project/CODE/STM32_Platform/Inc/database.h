@@ -99,7 +99,6 @@ typedef struct{
  * @brief Dashboard node struct.
  * @note This struct is used to store the Dashboard node paramets for the database layer
  */
-
 typedef struct{
      uint8_t R2D;
 }dashboard_node_t;
@@ -194,10 +193,10 @@ typedef struct {
 /* =============================== Global Defines =============================== */
 
 #define BRAKE_PEDAL_THRESHOLD 5 // Threshold for brake pedal pressed state
-#define UC_GAS_VALUE 0xFFFF
-#define UC_BRAKE_VALUE 0xFFFF
-#define UC_SW_VALUE 0xFFFF
-#define UC_BIOPS_VALUE 0xFFFF
+#define UC_GAS_VALUE 0xFF15
+#define UC_BRAKE_VALUE 0xFF15
+#define UC_SW_VALUE 0xFF15
+#define UC_BIOPS_VALUE 0xFF15
 #define SHORT_TO_GND_VALUE 0xFF10
 #define SHORT_TO_VCC_VALUE 0xFF11
 

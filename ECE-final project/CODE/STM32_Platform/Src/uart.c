@@ -10,7 +10,6 @@ UART_HandleTypeDef* pUart2;         // UART handle pinters
 UART_HandleTypeDef* pUart3;         // UART handle pinters
 static handler_set_t* pHandlers = NULL;    // Pointer to the handler set from the platform layer
 static plt_callbacks_t* pCallbacks = NULL; // Pointer to the callback function pointers from the platform layer
-uart_message_t Uart_TxData = {0};  // UART message structure for transmission
 debug_message_t Debug_TxData = {0};  // Debug message structure for transmission
 uint8_t Uart_RxData[2][sizeof(uart_message_t)] = {0};  // DMA buffer for SPI reception
 void (*Uart_RxCallback)(uart_message_t *) = NULL;  // Callback function for UART reception
@@ -21,17 +20,12 @@ static QueueItem_t uartRxMessage = {
     .sizeof_data = sizeof(uart_message_t)
 };
 
+//TX Queue for UART1 to Sync between MCUs
 static Queue_t uartTxQueue = {0};
 static QueueItem_t uartTxMessage = {
     .data = NULL,
     .sizeof_data = sizeof(uart_message_t)
-};
-
-static Queue_t debugTxQueue = {0};
-static QueueItem_t debugTxMessage = {
-    .data = NULL,
-    .sizeof_data = sizeof(debug_message_t)
-};
+};  
 
 /*========================= Function Definitions =========================*/
 
@@ -51,7 +45,6 @@ void plt_UartInit(size_t tx_queue_size)
     pCallbacks = plt_GetCallbacksPointer();  // Get the callback function pointer
     Uart_RxCallback = pCallbacks->UART_RxCallback; // Set the UART RX callback function pointer
     Queue_Init(&uartRxQueue,&uartRxMessage,tx_queue_size);  // Initialize the RX queue for UART1 reception
-
     Queue_Init(&uartTxQueue,&uartTxMessage,tx_queue_size);  // Initialize the TX queue for UART1 transmission
 
     if(pHandlers->huart1 != NULL)
@@ -61,11 +54,9 @@ void plt_UartInit(size_t tx_queue_size)
         HAL_UART_Receive_DMA(pUart1,Uart_RxData,(uint16_t)sizeof(uart_message_t));
     }
 
-
     if(pHandlers->huart2 != NULL)
     {
-        pUart2 = pHandlers->huart2;  // Set the UART handle pointer
-        Queue_Init(&debugTxQueue,&debugTxMessage,tx_queue_size);  // Initialize the debugging queue for UART2  transmission for 
+        pUart2 = pHandlers->huart2;  // Set the UART handle pointer (UART2 is used for debug messages)
     }
 
     if(pHandlers->huart3 != NULL)
@@ -73,10 +64,6 @@ void plt_UartInit(size_t tx_queue_size)
         pUart3 = pHandlers->huart3;  // Set the UART handle pointer
         HAL_UART_Receive_DMA(pUart3,Uart_RxData,(uint16_t)sizeof(uart_message_t));
     }
-
-
-
-    
 }
 
 /**
@@ -141,8 +128,6 @@ void plt_UartSyncMCUs(void)
 */ 
 HAL_StatusTypeDef plt_UartSendMsg(UartChanel_t chanel, uart_message_t* pData)
 {  
-    
-    #ifdef HAL_UART_MODULE_ENABLED
     HAL_StatusTypeDef status;
     UART_HandleTypeDef* pUart = (chanel == Uart1) ? pUart1:pUart3;
     if(pUart->gState == HAL_UART_STATE_READY )
@@ -150,8 +135,6 @@ HAL_StatusTypeDef plt_UartSendMsg(UartChanel_t chanel, uart_message_t* pData)
     status = HAL_UART_Transmit_DMA(pUart,(uint8_t*)pData,(uint16_t)sizeof(uart_message_t));
     }
     return status;
-    #endif
-
 }
 /**
  * @brief Sends a debug message through the USART2 DMA.
@@ -159,25 +142,15 @@ HAL_StatusTypeDef plt_UartSendMsg(UartChanel_t chanel, uart_message_t* pData)
  * @param len Length of the data to be sent
  * 
  */
-void plt_DebugSendMSG(uint8_t* pData,uint16_t len)
+HAL_StatusTypeDef plt_DebugSendMSG(uint8_t* pData,uint16_t len)
 {
-    if(pUart2)
+    HAL_StatusTypeDef status;
+    if(pUart2->gState == HAL_UART_STATE_READY )
     {
-        Debug_TxData.len = len;
-        memcpy(Debug_TxData.data,pData,len);
-        Queue_Push(&debugTxQueue,&Debug_TxData);  // Push the data into the queue  
+    status = HAL_UART_Transmit_DMA(pUart2,(uint8_t*)pData,(uint16_t)sizeof(uart_message_t));
     }
+    return status;
 }
-
-/**
- * @brief Gets the UART transmission queue pointer.
- * @retval Pointer to the UART transmission queue.
- */
-
- Queue_t* GetDebugTxQueue(void)
- {
-        return &debugTxQueue;
- }
  
  /**
   * @brief UART RX complete callback function.
@@ -202,15 +175,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  }
 
 
- /**
- * @brief  Returns a pointer to the CAN RX queue.
- * @retval Pointer to the CAN RX queue
- * @note   This function is used to get the pointer to the CAN RX queue.
-*/
-Queue_t* plt_GetUartRxQueue()
-{
-    return &uartRxQueue;
-}
+/**
+ * @brief Get the UART TX Queue
+ * @return Pointer to the UART TX Queue
+ * @note This function returns the pointer to the UART TX Queue
+ */
 Queue_t* plt_GetUartTxQueue()
 {
     return &uartTxQueue;

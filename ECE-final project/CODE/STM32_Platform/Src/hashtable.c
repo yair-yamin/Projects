@@ -144,7 +144,7 @@ HashStatus_t hash_SetTable(void)
 
 HashStatus_t hash_Init(void)
 {
-	clear_table();             /* replaces malloc/calloc/free path */
-	//return hash_SetTable();
+	clear_table();         
+	return hash_SetTable();
 }
 
